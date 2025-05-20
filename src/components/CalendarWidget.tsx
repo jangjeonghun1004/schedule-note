@@ -72,27 +72,25 @@ export default function CalendarWidget() {
   return (
     <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-500 p-[1.5px] rounded-xl">
       <div className="bg-[#232325] rounded-xl px-5 py-4 min-h-[180px] flex flex-col justify-between">
-        <h3 className="text-2xl font-bold mb-4 select-none text-center flex justify-center items-center gap-2 mt-[-10px]">
+        <h3 className="text-2xl font-bold mb-4 select-none text-center flex justify-center items-center gap-2 cursor-move">
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">캘린더</span>
         </h3>
-        <div className="flex justify-between items-center mb-4">
+        <div className="grid grid-cols-7 gap-1">
           <button
             onClick={prevMonth}
-            className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors"
+            className="h-8 w-8 flex items-center justify-center hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors"
           >
             &lt;
           </button>
-          <div className="font-medium text-gray-200">
+          <div className="col-span-5 font-medium text-gray-200 flex items-center justify-center">
             {currentDate.getFullYear()}년 {monthNames[currentDate.getMonth()]}
           </div>
           <button
             onClick={nextMonth}
-            className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors"
+            className="h-8 w-8 flex items-center justify-center hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors"
           >
             &gt;
           </button>
-        </div>
-        <div className="grid grid-cols-7 gap-1">
           {dayNames.map((day, index) => (
             <div 
               key={index} 

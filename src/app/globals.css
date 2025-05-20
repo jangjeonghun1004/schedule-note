@@ -34,7 +34,7 @@ body {
 }
 
 /* 배경 이미지가 적용될 때 콘텐츠가 잘 보이도록 오버레이 추가 */
-body::before {
+/* body::before {
   content: "";
   position: fixed;
   top: 0;
@@ -46,7 +46,7 @@ body::before {
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s ease;
-}
+} */
 
 body[style*="background-image"]::before {
   opacity: 1;

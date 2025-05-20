@@ -70,7 +70,7 @@ export default function BackgroundSelectorWidget() {
   return (
     <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-500 p-[1.5px] rounded-xl">
       <div className="bg-[#232325] rounded-xl px-5 py-4 min-h-[90px] flex flex-col justify-between">
-        <h3 className="text-2xl font-bold mb-4 select-none text-center flex justify-center items-center gap-2 mt-[-10px]">
+        <h3 className="text-2xl font-bold mb-4 select-none text-center flex justify-center items-center gap-2 cursor-move">
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">배경</span>
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-red-400 to-orange-400">이미지</span>
         </h3>

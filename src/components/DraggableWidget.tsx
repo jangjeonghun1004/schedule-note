@@ -116,15 +116,15 @@ export default function DraggableWidget({
           : isOver 
             ? 'opacity-100 scale-105 shadow-lg' 
             : 'opacity-100'
-      } ${isLocked ? '' : 'cursor-move'} ${className}`}
+      } ${className} ${isLocked ? 'locked-widget' : ''}`}
       style={{
         position: 'relative',
         zIndex: isDragging ? 100 : 1
       }}
     >
       {/* 드래그 핸들 아이콘 - 잠긴 위젯에는 표시하지 않음 */}
-      {!isLocked && (
-        <div className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
+      {/* {!isLocked && (
+        <div className="absolute top-5 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="9" cy="5" r="1" />
             <circle cx="9" cy="12" r="1" />
@@ -134,9 +134,15 @@ export default function DraggableWidget({
             <circle cx="15" cy="19" r="1" />
           </svg>
         </div>
-      )}
+      )} */}
       
       {children}
+      
+      <style jsx global>{`
+        .locked-widget h3.cursor-move {
+          cursor: default !important;
+        }
+      `}</style>
     </div>
   );
 } 
