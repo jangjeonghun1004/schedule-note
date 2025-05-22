@@ -1,3 +1,24 @@
+
+
+API 라우터에서 이 Date 객체가 JSON으로 직렬화될 때 자동으로 UTC로 변환됩니다
+
+로컬 스토리지와 API 통합으로 오프라인 지원
+
+
+
+API 엔드포인트 목록
+GET /api/todo - 할 일 목록 조회 (쿼리 파라미터로 사용자 필터링 가능)
+POST /api/todo - 새 할 일 생성
+GET /api/todo/[id] - 단일 할 일 조회
+PUT /api/todo/[id] - 할 일 수정
+DELETE /api/todo/[id] - 할 일 삭제
+PATCH /api/todo/[id] - 할 일 완료 상태 토글
+PUT /api/todo/batch - 여러 할 일 일괄 수정
+DELETE /api/todo/batch - 여러 할 일 일괄 삭제
+
+
+
+
 프로젝트 구조 분석
 메인 페이지 (src/app/page.tsx)
 -여러 위젯을 관리하고 배치하는 핵심 페이지

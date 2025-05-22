@@ -2,49 +2,169 @@
 
 import { useState, useEffect } from 'react';
 
+type Memo = {
+  id: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+};
+
 export default function MemoWidget() {
-  const [memos, setMemos] = useState<string[]>([]);
+  const [memos, setMemos] = useState<Memo[]>([]);
   const [newMemo, setNewMemo] = useState('');
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editText, setEditText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  // 메모 목록 불러오기
+  const fetchMemos = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/memo');
+      
+      if (!response.ok) {
+        throw new Error('메모 불러오기에 실패했습니다.');
+      }
+      
+      const data = await response.json();
+      setMemos(data);
+    } catch (err) {
+      console.error('메모 불러오기 오류:', err);
+      setError('메모를 불러오는 중 오류가 발생했습니다.');
+      // 백업: 로컬 스토리지에서 불러오기
     const savedMemos = localStorage.getItem('memos');
     if (savedMemos) {
       setMemos(JSON.parse(savedMemos));
     }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMemos();
   }, []);
 
-  const saveMemos = (updatedMemos: string[]) => {
-    localStorage.setItem('memos', JSON.stringify(updatedMemos));
-    setMemos(updatedMemos);
-  };
-
-  const addMemo = () => {
+  // 메모 추가
+  const addMemo = async () => {
     if (newMemo.trim() === '') return;
 
-    const updatedMemos = [...memos, newMemo];
-    saveMemos(updatedMemos);
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/memo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: newMemo }),
+      });
+
+      if (!response.ok) {
+        throw new Error('메모 추가에 실패했습니다.');
+      }
+
+      const addedMemo = await response.json();
+      setMemos(prev => [addedMemo, ...prev]);
+      setNewMemo('');
+    } catch (err) {
+      console.error('메모 추가 오류:', err);
+      setError('메모를 추가하는 중 오류가 발생했습니다.');
+      
+      // 백업: 로컬 스토리지에 저장
+      const updatedMemos = [...memos, { 
+        id: Date.now().toString(),
+        content: newMemo,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        userId: ""
+      }];
+      localStorage.setItem('memos', JSON.stringify(updatedMemos));
+      setMemos(updatedMemos);
     setNewMemo('');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const deleteMemo = (index: number) => {
+  // 메모 삭제
+  const deleteMemo = async (index: number) => {
+    const memo = memos[index];
+
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/memo/${memo.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('메모 삭제에 실패했습니다.');
+      }
+
+      setMemos(prevMemos => prevMemos.filter((_, i) => i !== index));
+    } catch (err) {
+      console.error('메모 삭제 오류:', err);
+      setError('메모를 삭제하는 중 오류가 발생했습니다.');
+      
+      // 백업: 로컬 스토리지에 저장
     const updatedMemos = memos.filter((_, i) => i !== index);
-    saveMemos(updatedMemos);
+      localStorage.setItem('memos', JSON.stringify(updatedMemos));
+      setMemos(updatedMemos);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const startEdit = (index: number) => {
     setEditIndex(index);
-    setEditText(memos[index]);
+    setEditText(memos[index].content);
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (editIndex === null) return;
+    const memo = memos[editIndex];
 
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/memo/${memo.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: editText }),
+      });
+
+      if (!response.ok) {
+        throw new Error('메모 수정에 실패했습니다.');
+      }
+
+      const updatedMemo = await response.json();
+      
+      setMemos(prevMemos => {
+        const newMemos = [...prevMemos];
+        newMemos[editIndex] = updatedMemo;
+        return newMemos;
+      });
+      
+      setEditIndex(null);
+    } catch (err) {
+      console.error('메모 수정 오류:', err);
+      setError('메모를 수정하는 중 오류가 발생했습니다.');
+      
+      // 백업: 로컬 스토리지에 저장
     const updatedMemos = [...memos];
-    updatedMemos[editIndex] = editText;
-    saveMemos(updatedMemos);
+      updatedMemos[editIndex] = {
+        ...updatedMemos[editIndex],
+        content: editText,
+        updatedAt: new Date().toISOString()
+      };
+      localStorage.setItem('memos', JSON.stringify(updatedMemos));
+      setMemos(updatedMemos);
     setEditIndex(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const cancelEdit = () => {
@@ -57,6 +177,17 @@ export default function MemoWidget() {
         <h3 className="text-2xl font-bold mb-4 select-none text-center flex justify-center items-center gap-2 cursor-move">
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">메모</span>
         </h3>
+        {error && (
+          <div className="bg-red-500/20 border border-red-500 text-red-300 p-2 mb-4 rounded text-xs">
+            {error}
+            <button 
+              className="ml-2 text-red-300 hover:text-white"
+              onClick={() => setError(null)}
+            >
+              ✕
+            </button>
+          </div>
+        )}
         <textarea
           className="w-full min-h-[80px] bg-transparent text-gray-100 border border-gray-700 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
           placeholder="메모를 입력하세요..."
@@ -65,29 +196,32 @@ export default function MemoWidget() {
         />
         <div className="flex justify-end mt-2 gap-2">
           <button
-            className="px-3 py-1 text-xs rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+            className={`px-3 py-1 text-xs rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={addMemo}
+            disabled={isLoading}
           >
-            저장
+            {isLoading ? '저장 중...' : '저장'}
           </button>
           <button
             className="px-3 py-1 text-xs rounded bg-gray-600 hover:bg-gray-700 text-white transition-colors"
             onClick={() => {
               setNewMemo('');
               setMemos([]);
-              localStorage.removeItem('memos');
+              fetchMemos();
             }}
           >
-            초기화
+            새로고침
           </button>
         </div>
         <div className="space-y-2 max-h-40 overflow-y-auto mt-4">
-          {memos.length === 0 ? (
+          {isLoading && memos.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-center py-2 text-sm">불러오는 중...</p>
+          ) : memos.length === 0 ? (
             <p className="text-gray-500 dark:text-gray-400 text-center py-2 text-sm">메모가 없습니다</p>
           ) : (
             memos.map((memo, index) => (
               <div
-                key={index}
+                key={memo.id || index}
                 className="bg-yellow-100/10 dark:bg-yellow-900/20 p-2 rounded-md shadow-sm border-l-4 border-yellow-500 relative text-sm text-gray-100 flex items-start gap-2"
               >
                 {editIndex === index ? (
@@ -112,9 +246,9 @@ export default function MemoWidget() {
                       </button>
                     </div>
                   </div>
-                ) : (
+                ) :
                   <>
-                    <span className="flex-1 whitespace-pre-wrap break-words pr-8">{memo}</span>
+                    <span className="flex-1 whitespace-pre-wrap break-words pr-8">{memo.content}</span>
                     <div className="flex gap-1">
                       <button
                         onClick={() => startEdit(index)}
@@ -136,7 +270,7 @@ export default function MemoWidget() {
                       </button>
                     </div>
                   </>
-                )}
+                }
               </div>
             ))
           )}

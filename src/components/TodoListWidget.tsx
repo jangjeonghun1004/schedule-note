@@ -1,50 +1,30 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Todo } from './TodoItem';
 import { Search } from 'lucide-react';
+import { useTodo } from '@/contexts/TodoContext';
 
 export default function TodoListWidget() {
-  const [todos, setTodos] = useState<Todo[]>([]);
+  const { 
+    todos, 
+    isLoading, 
+    error,
+    deleteTodo: apiDeleteTodo, 
+    toggleTodo: apiToggleTodo 
+  } = useTodo();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'active' | 'completed' | 'overdue'>('all');
 
-  // 할 일 목록 불러오기
-  const loadTodos = () => {
-    const savedTodos = localStorage.getItem('todos');
-    if (savedTodos) {
-      setTodos(JSON.parse(savedTodos));
-    }
+  // 할 일 삭제 처리
+  const handleDeleteTodo = (id: string) => {
+    apiDeleteTodo(id);
   };
 
-  useEffect(() => {
-    // 초기 로딩
-    loadTodos();
-
-    // todosUpdated 이벤트 리스너 등록 (AddTodoWidget에서 발생)
-    const handleTodosUpdated = () => loadTodos();
-    window.addEventListener('todosUpdated', handleTodosUpdated);
-
-    // 컴포넌트 언마운트 시 이벤트 리스너 제거
-    return () => {
-      window.removeEventListener('todosUpdated', handleTodosUpdated);
-    };
-  }, []);
-
-  // 할 일 삭제
-  const deleteTodo = (id: string) => {
-    const updatedTodos = todos.filter(todo => todo.id !== id);
-    localStorage.setItem('todos', JSON.stringify(updatedTodos));
-    setTodos(updatedTodos);
-  };
-
-  // 할 일 완료 상태 토글
-  const toggleTodo = (id: string) => {
-    const updatedTodos = todos.map(todo =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    );
-    localStorage.setItem('todos', JSON.stringify(updatedTodos));
-    setTodos(updatedTodos);
+  // 할 일 완료 상태 토글 처리
+  const handleToggleTodo = (id: string) => {
+    apiToggleTodo(id);
   };
 
   // 필터링된 할 일 목록
@@ -67,39 +47,12 @@ export default function TodoListWidget() {
           if (!todo.deadline || todo.completed) return false;
           
           try {
-            // deadline은 'YYYY-MM-DD HH:MM:SS' 형식 (데이터베이스 형식)
-            const [datePart, timePart] = todo.deadline.split(' ');
-            const [year, month, day] = datePart.split('-').map(Number);
-            const [hours, minutes] = timePart ? timePart.split(':').slice(0, 2).map(Number) : [0, 0];
-            
-            // 현재 날짜와 시간 (로컬 시간)
-            const currentYear = now.getFullYear();
-            const currentMonth = now.getMonth() + 1; // JavaScript는 0부터 시작
-            const currentDay = now.getDate();
-            const currentHour = now.getHours();
-            const currentMinute = now.getMinutes();
-            
-            // 날짜 비교
-            if (year < currentYear) return true;
-            if (year > currentYear) return false;
-            
-            if (month < currentMonth) return true;
-            if (month > currentMonth) return false;
-            
-            if (day < currentDay) return true;
-            if (day > currentDay) return false;
-            
-            // 날짜가 같은 경우 시간 비교
-            if (hours < currentHour) return true;
-            if (hours > currentHour) return false;
-            
-            // 시간이 같은 경우 분 비교
-            return minutes < currentMinute;
+            // ISO 형식이나 공백으로 구분된 모든 형식의 날짜를 Date 객체로 변환하여 비교
+            const deadlineDate = new Date(todo.deadline);
+            return deadlineDate < now;
           } catch (error) {
             console.error('기한 초과 확인 오류:', error, todo.deadline);
-            
-            // 오류 발생 시 안전하게 Date 객체로 비교
-            return new Date(todo.deadline) < now;
+            return false;
           }
         });
       }
@@ -117,40 +70,12 @@ export default function TodoListWidget() {
       if (!todo.deadline || todo.completed) return false;
       
       try {
-        // deadline은 'YYYY-MM-DD HH:MM:SS' 형식 (데이터베이스 형식)
-        const [datePart, timePart] = todo.deadline.split(' ');
-        const [year, month, day] = datePart.split('-').map(Number);
-        const [hours, minutes] = timePart ? timePart.split(':').slice(0, 2).map(Number) : [0, 0];
-        
-        // 현재 날짜와 시간 (로컬 시간)
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth() + 1; // JavaScript는 0부터 시작
-        const currentDay = now.getDate();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-        
-        // 날짜 비교
-        if (year < currentYear) return true;
-        if (year > currentYear) return false;
-        
-        if (month < currentMonth) return true;
-        if (month > currentMonth) return false;
-        
-        if (day < currentDay) return true;
-        if (day > currentDay) return false;
-        
-        // 날짜가 같은 경우 시간 비교
-        if (hours < currentHour) return true;
-        if (hours > currentHour) return false;
-        
-        // 시간이 같은 경우 분 비교
-        return minutes < currentMinute;
+        // ISO 형식이나 공백으로 구분된 모든 형식의 날짜를 Date 객체로 변환하여 비교
+        const deadlineDate = new Date(todo.deadline);
+        return deadlineDate < new Date();
       } catch (error) {
         console.error('기한 초과 확인 오류:', error, todo.deadline);
-        
-        // 오류 발생 시 안전하게 Date 객체로 비교
-        return new Date(todo.deadline) < new Date();
+        return false;
       }
     }).length
   };
@@ -166,6 +91,13 @@ export default function TodoListWidget() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-red-400 to-orange-400">목록</span>
             </h3>
           </div>
+          
+          {/* 에러 메시지 표시 */}
+          {error && (
+            <div className="bg-red-500/20 border border-red-500 text-red-300 p-2 mb-3 rounded text-xs">
+              {error}
+            </div>
+          )}
           
           {/* 검색 및 필터링 UI */}
           <div className={`transition-all duration-300 overflow-hidden max-h-[100px] opacity-100 mb-3`}>
@@ -189,75 +121,63 @@ export default function TodoListWidget() {
                 </button>
               )}
             </div>
-            
-            <div className="flex space-x-2 text-xs">
-              <button
-                onClick={() => setFilterMode('all')}
-                className={`px-2 py-1 rounded-md flex items-center ${
-                  filterMode === 'all'
-                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
-                    : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:border-gray-600'
-                } transition-colors`}
-              >
-                전체 <span className="ml-1 px-1.5 py-0.5 text-[10px] rounded-full bg-gray-700">{countTodos.all}</span>
-              </button>
-              <button
-                onClick={() => setFilterMode('active')}
-                className={`px-2 py-1 rounded-md flex items-center ${
-                  filterMode === 'active'
-                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
-                    : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:border-gray-600'
-                } transition-colors`}
-              >
-                진행 중 <span className="ml-1 px-1.5 py-0.5 text-[10px] rounded-full bg-gray-700">{countTodos.active}</span>
-              </button>
-              <button
-                onClick={() => setFilterMode('completed')}
-                className={`px-2 py-1 rounded-md flex items-center ${
-                  filterMode === 'completed'
-                    ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                    : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:border-gray-600'
-                } transition-colors`}
-              >
-                완료 <span className="ml-1 px-1.5 py-0.5 text-[10px] rounded-full bg-gray-700">{countTodos.completed}</span>
-              </button>
-              <button
-                onClick={() => setFilterMode('overdue')}
-                className={`px-2 py-1 rounded-md flex items-center ${
-                  filterMode === 'overdue'
-                    ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
-                    : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:border-gray-600'
-                } transition-colors`}
-              >
-                기한 초과 <span className="ml-1 px-1.5 py-0.5 text-[10px] rounded-full bg-gray-700">{countTodos.overdue}</span>
-              </button>
-            </div>
+          </div>
+          
+          {/* 필터 버튼 */}
+          <div className="flex space-x-2 text-xs">
+            <button
+              onClick={() => setFilterMode('all')}
+              className={`px-2 py-1 rounded-md flex items-center ${
+                filterMode === 'all'
+                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
+                  : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:border-gray-600'
+              } transition-colors`}
+            >
+              모두 <span className="ml-1.5 text-gray-500">{countTodos.all}</span>
+            </button>
+            <button
+              onClick={() => setFilterMode('active')}
+              className={`px-2 py-1 rounded-md flex items-center ${
+                filterMode === 'active'
+                  ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                  : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:border-gray-600'
+              } transition-colors`}
+            >
+              진행중 <span className="ml-1.5 text-gray-500">{countTodos.active}</span>
+            </button>
+            <button
+              onClick={() => setFilterMode('completed')}
+              className={`px-2 py-1 rounded-md flex items-center ${
+                filterMode === 'completed'
+                  ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' 
+                  : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:border-gray-600'
+              } transition-colors`}
+            >
+              완료 <span className="ml-1.5 text-gray-500">{countTodos.completed}</span>
+            </button>
+            <button
+              onClick={() => setFilterMode('overdue')}
+              className={`px-2 py-1 rounded-md flex items-center ${
+                filterMode === 'overdue'
+                  ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
+                  : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:border-gray-600'
+              } transition-colors`}
+            >
+              기한초과 <span className="ml-1.5 text-gray-500">{countTodos.overdue}</span>
+            </button>
           </div>
         </div>
         
-        {/* 할 일 목록 섹션 */}
-        <div className="flex-1">
-          {filteredTodos.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-6 bg-transparent rounded-md">
-              <p className="text-gray-500 dark:text-gray-400 text-center text-sm">
-                {searchTerm 
-                  ? '검색 결과가 없습니다' 
-                  : filterMode !== 'all' 
-                    ? `${filterMode === 'active' ? '진행 중인' : filterMode === 'completed' ? '완료된' : '기한이 지난'} 할 일이 없습니다` 
-                    : '할 일이 없습니다'
-                }
-              </p>
-              {(searchTerm || filterMode !== 'all') && (
-                <button 
-                  onClick={() => {
-                    setSearchTerm('');
-                    setFilterMode('all');
-                  }}
-                  className="mt-2 text-xs text-blue-500 hover:text-blue-400"
-                >
-                  필터 초기화
-                </button>
-              )}
+        {/* 목록 섹션 */}
+        <div className="flex-1 overflow-hidden">
+          {isLoading && todos.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <div className="animate-spin mx-auto mb-3 h-6 w-6 border-2 border-t-transparent border-blue-500 rounded-full"></div>
+              <p>로딩 중...</p>
+            </div>
+          ) : filteredTodos.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>할 일이 없습니다</p>
             </div>
           ) : (
             <div className="space-y-2 pr-1">
@@ -265,8 +185,8 @@ export default function TodoListWidget() {
                 <TodoItemWidget
                   key={todo.id}
                   todo={todo}
-                  onDelete={deleteTodo}
-                  onToggle={toggleTodo}
+                  onDelete={handleDeleteTodo}
+                  onToggle={handleToggleTodo}
                 />
               ))}
             </div>
@@ -313,8 +233,11 @@ function TodoItemWidget({ todo, onDelete, onToggle }: {
         day: 'numeric'
       };
       
-      // 시간 표시 여부 확인 (HH:MM:SS 형식에서 00:00:00이 아닌 경우)
-      const hasTime = deadline.includes(' ') && deadline.split(' ')[1] !== '00:00:00';
+      // 시간 표시 여부 확인 (ISO 형식 또는 공백으로 구분된 형식 모두 처리)
+      const hasTime = (
+        (deadline.includes('T') && !deadline.includes('T00:00:00.000Z')) || 
+        (deadline.includes(' ') && deadline.split(' ')[1] !== '00:00:00')
+      );
       
       // 오늘, 내일, 나머지 날짜 구분하여 표시
       let dateText = '';
@@ -349,40 +272,14 @@ function TodoItemWidget({ todo, onDelete, onToggle }: {
     if (todo.completed) return false;
     
     try {
-      // deadline은 'YYYY-MM-DD HH:MM:SS' 형식 (데이터베이스 형식)
-      const [datePart, timePart] = todo.deadline.split(' ');
-      const [year, month, day] = datePart.split('-').map(Number);
-      const [hours, minutes] = timePart ? timePart.split(':').slice(0, 2).map(Number) : [0, 0];
-      
-      // 현재 날짜와 시간 (로컬 시간)
+      // ISO 형식이나 공백으로 구분된 모든 형식의 날짜를 Date 객체로 변환하여 비교
+      const deadlineDate = new Date(todo.deadline);
       const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth() + 1; // JavaScript는 0부터 시작
-      const currentDay = now.getDate();
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
       
-      // 날짜 비교
-      if (year < currentYear) return true;
-      if (year > currentYear) return false;
-      
-      if (month < currentMonth) return true;
-      if (month > currentMonth) return false;
-      
-      if (day < currentDay) return true;
-      if (day > currentDay) return false;
-      
-      // 날짜가 같은 경우 시간 비교
-      if (hours < currentHour) return true;
-      if (hours > currentHour) return false;
-      
-      // 시간이 같은 경우 분 비교
-      return minutes < currentMinute;
+      return deadlineDate < now;
     } catch (error) {
       console.error('기한 초과 확인 오류:', error, todo.deadline);
-      
-      // 오류 발생 시 안전하게 Date 객체로 비교
-      return new Date(todo.deadline) < new Date();
+      return false;
     }
   };
 

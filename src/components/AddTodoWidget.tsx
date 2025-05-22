@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Todo } from './TodoItem';
 import { Plus, Calendar, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTodo } from '@/contexts/TodoContext';
 
 // 날짜와 시간 입력 필드 스타일 추가
 const dateTimeInputStyles = `
@@ -22,6 +23,9 @@ export default function AddTodoWidget() {
   const [showDeadline, setShowDeadline] = useState(false);
   const [charCount, setCharCount] = useState(0);
   
+  // TodoContext에서 추가 기능 가져오기
+  const { addTodo: addTodoContext, isLoading } = useTodo();
+  
   // 날짜/시간 피커 토글을 위한 ref
   const dateInputRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
@@ -29,13 +33,6 @@ export default function AddTodoWidget() {
 
   // 현재 날짜 구하기
   const today = new Date().toISOString().split('T')[0];
-
-  // // 컴포넌트 마운트 시 할 일 입력 필드에 포커스
-  // useEffect(() => {
-  //   if (todoInputRef.current) {
-  //     todoInputRef.current.focus();
-  //   }
-  // }, []);
 
   // 할 일 입력 시 글자 수 카운트
   useEffect(() => {
@@ -58,7 +55,7 @@ export default function AddTodoWidget() {
   };
   
   // 할 일 추가 함수
-  const addTodo = () => {
+  const addTodo = async () => {
     if (newTodo.trim() === '') {
       toast.error('할 일 내용을 입력해주세요', {
         duration: 2000,
@@ -80,31 +77,9 @@ export default function AddTodoWidget() {
     // 마감일을 데이터베이스 형식으로 변환 (옵션이 활성화된 경우에만)
     const dbFormattedDeadline = (showDeadline && deadline) ? formatToDatetimeFormat(deadline) : undefined;
     
-    const newTodoItem: Todo = {
-      id: Date.now().toString(),
-      text: newTodo,
-      completed: false,
-      deadline: dbFormattedDeadline
-    };
-    
     try {
-      // 로컬 스토리지 처리
-      const savedTodos = localStorage.getItem('todos');
-      const todos = savedTodos ? JSON.parse(savedTodos) : [];
-      localStorage.setItem('todos', JSON.stringify([...todos, newTodoItem]));
-      
-      // 이벤트 발생
-      window.dispatchEvent(new Event('todosUpdated'));
-      
-      // 성공 알림
-      toast.success('할 일이 추가되었습니다', {
-        duration: 2000,
-        position: 'top-center',
-        style: {
-          background: '#48BB78',
-          color: '#fff',
-        },
-      });
+      // API를 통해 할 일 추가
+      await addTodoContext(newTodo, dbFormattedDeadline, "user-1"); // 현재는 고정된 사용자 ID 사용
       
       // 폼 초기화
       setTimeout(() => {
@@ -115,14 +90,6 @@ export default function AddTodoWidget() {
       }, 300);
     } catch (error) {
       console.error('할 일 추가 오류:', error);
-      toast.error('할 일을 추가하는 중 오류가 발생했습니다', {
-        duration: 2000,
-        position: 'top-center',
-        style: {
-          background: '#F56565',
-          color: '#fff',
-        },
-      });
       setIsAdding(false);
     }
   };
@@ -189,12 +156,12 @@ export default function AddTodoWidget() {
       <style jsx global>{dateTimeInputStyles}</style>
       <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-500 p-[1.5px] rounded-xl shadow-lg">
         <div className="bg-[#232325] rounded-xl px-5 py-4 min-h-[90px] flex flex-col justify-between">
-          <h3 className="text-2xl font-bold select-none text-ce7nter flex justify-center items-center gap-2 cursor-move">
+          <h3 className="text-2xl font-bold select-none text-center flex justify-center items-center gap-2 cursor-move">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">새 할 일</span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-red-400 to-orange-400">추가</span>
           </h3>
           
-          <div className={`flex flex-col gap-4 transition-all duration-300 ${isAdding ? 'opacity-50' : 'opacity-100'}`}>
+          <div className={`flex flex-col gap-4 transition-all duration-300 ${isAdding || isLoading ? 'opacity-50' : 'opacity-100'}`}>
             {/* 할 일 입력 영역 */}
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
@@ -228,7 +195,7 @@ export default function AddTodoWidget() {
                   placeholder="새 할 일을 입력하세요"
                   className="flex-1 px-3 py-2.5 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800/50 text-white text-sm"
                   onKeyDown={handleKeyDown}
-                  disabled={isAdding}
+                  disabled={isAdding || isLoading}
                   maxLength={100}
                 />
                 <button
@@ -264,7 +231,7 @@ export default function AddTodoWidget() {
                       min={today}
                       onChange={handleDateChange}
                       className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800/50 text-white text-sm"
-                      disabled={isAdding}
+                      disabled={isAdding || isLoading}
                     />
                     <div 
                       className="absolute inset-0 cursor-pointer" 
@@ -307,7 +274,7 @@ export default function AddTodoWidget() {
                         value={deadline && deadline.includes('T') ? deadline.split('T')[1] : ''}
                         onChange={handleTimeChange}
                         className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800/50 text-white text-sm"
-                        disabled={isAdding}
+                        disabled={isAdding || isLoading}
                       />
                       <div 
                         className="absolute inset-0 cursor-pointer" 
@@ -341,16 +308,28 @@ export default function AddTodoWidget() {
             {/* 추가 버튼 */}
             <button
               onClick={addTodo}
-              disabled={newTodo.trim() === '' || isAdding}
+              disabled={newTodo.trim() === '' || isAdding || isLoading}
               className={`flex items-center justify-center gap-2 py-2.5 rounded-md transition-all duration-300 mt-1
-                ${newTodo.trim() === '' ? 
+                ${newTodo.trim() === '' || isAdding || isLoading ? 
                   'bg-gray-700 text-gray-500 cursor-not-allowed' : 
                   'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
                 }`}
               aria-label="할 일 추가하기"
             >
-              <Plus size={16} className="opacity-90" />
-              <span className="font-medium">추가하기</span>
+              {isLoading || isAdding ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  처리 중...
+                </span>
+              ) : (
+                <>
+                  <Plus size={16} className="opacity-90" />
+                  <span className="font-medium">추가하기</span>
+                </>
+              )}
             </button>
           </div>
         </div>
