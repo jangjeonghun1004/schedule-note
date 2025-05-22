@@ -11,55 +11,9 @@ const dateTimeInputStyles = `
   input[type="date"]::-webkit-calendar-picker-indicator,
   input[type="time"]::-webkit-calendar-picker-indicator {
     filter: invert(1);
-    opacity: 0.7;
     cursor: pointer;
   }
-  
-  /* 호버 시 불투명도 증가 */
-  input[type="date"]::-webkit-calendar-picker-indicator:hover,
-  input[type="time"]::-webkit-calendar-picker-indicator:hover {
-    opacity: 1;
-  }
-  
-  /* 애니메이션 효과 */
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  @keyframes fadeOut {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(-10px); }
-  }
-  
-  .fade-in {
-    animation: fadeIn 0.3s ease-out forwards;
-  }
-  
-  .fade-out {
-    animation: fadeOut 0.3s ease-out forwards;
-  }
-  
-  /* 커스텀 스크롤바 */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  
-  ::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-  }
-`;
+  `;
 
 export default function AddTodoWidget() {
   const [newTodo, setNewTodo] = useState('');
@@ -76,12 +30,12 @@ export default function AddTodoWidget() {
   // 현재 날짜 구하기
   const today = new Date().toISOString().split('T')[0];
 
-  // 컴포넌트 마운트 시 할 일 입력 필드에 포커스
-  useEffect(() => {
-    if (todoInputRef.current) {
-      todoInputRef.current.focus();
-    }
-  }, []);
+  // // 컴포넌트 마운트 시 할 일 입력 필드에 포커스
+  // useEffect(() => {
+  //   if (todoInputRef.current) {
+  //     todoInputRef.current.focus();
+  //   }
+  // }, []);
 
   // 할 일 입력 시 글자 수 카운트
   useEffect(() => {
@@ -116,21 +70,6 @@ export default function AddTodoWidget() {
       });
       if (todoInputRef.current) {
         todoInputRef.current.focus();
-      }
-      return;
-    }
-    
-    if (showDeadline && !deadline) {
-      toast.error('마감일을 설정해주세요', {
-        duration: 2000,
-        position: 'top-center',
-        style: {
-          background: '#F56565',
-          color: '#fff',
-        },
-      });
-      if (dateInputRef.current) {
-        dateInputRef.current.focus();
       }
       return;
     }
@@ -173,11 +112,6 @@ export default function AddTodoWidget() {
         setDeadline('');
         setShowDeadline(false); // 마감일 설정 옵션 비활성화
         setIsAdding(false);
-        
-        // 할 일 입력 필드에 포커스
-        if (todoInputRef.current) {
-          todoInputRef.current.focus();
-        }
       }, 300);
     } catch (error) {
       console.error('할 일 추가 오류:', error);
@@ -255,7 +189,7 @@ export default function AddTodoWidget() {
       <style jsx global>{dateTimeInputStyles}</style>
       <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-500 p-[1.5px] rounded-xl shadow-lg">
         <div className="bg-[#232325] rounded-xl px-5 py-4 min-h-[90px] flex flex-col justify-between">
-          <h3 className="text-xl font-bold mb-4 select-none text-center flex justify-center items-center gap-2">
+          <h3 className="text-2xl font-bold select-none text-ce7nter flex justify-center items-center gap-2 cursor-move">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">새 할 일</span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-red-400 to-orange-400">추가</span>
           </h3>

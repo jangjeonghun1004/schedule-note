@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Todo } from './TodoItem';
-import { Search, Filter, FilterX } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 export default function TodoListWidget() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'active' | 'completed' | 'overdue'>('all');
-  const [showFilters, setShowFilters] = useState(true);
 
   // 할 일 목록 불러오기
   const loadTodos = () => {
@@ -166,20 +165,10 @@ export default function TodoListWidget() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">할 일</span>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-red-400 to-orange-400">목록</span>
             </h3>
-            
-            <div className="flex items-center gap-2">
-              <button 
-                className={`p-1.5 rounded-md ${showFilters ? 'bg-blue-500/20 text-blue-400' : 'hover:bg-gray-700/50 text-gray-400 hover:text-gray-300'} transition-all`}
-                onClick={() => setShowFilters(!showFilters)}
-                aria-label={showFilters ? "필터 닫기" : "필터 열기"}
-              >
-                {showFilters ? <FilterX size={18} /> : <Filter size={18} />}
-              </button>
-            </div>
           </div>
           
           {/* 검색 및 필터링 UI */}
-          <div className={`transition-all duration-300 overflow-hidden ${showFilters ? 'max-h-[100px] opacity-100 mb-3' : 'max-h-0 opacity-0'}`}>
+          <div className={`transition-all duration-300 overflow-hidden max-h-[100px] opacity-100 mb-3`}>
             <div className="relative mb-2">
               <input
                 type="text"
