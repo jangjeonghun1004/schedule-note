@@ -82,6 +82,12 @@ export default function Home() {
       document.body.style.backgroundPosition = 'center center';
       document.body.style.backgroundRepeat = 'no-repeat';
       document.body.style.backgroundAttachment = 'fixed';
+    } else if (!savedBackground) {
+      const bgImage = '/skin/Designer-5.png';
+      document.body.style.backgroundImage = `url(${bgImage})`;
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundPosition = 'center center';
+      document.body.style.backgroundRepeat = 'no-repeat';
     }
     
     // 알림 권한 요청

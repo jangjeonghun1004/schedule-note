@@ -78,6 +78,7 @@ export const TodoProvider = ({ children, defaultUserId = '' }: TodoProviderProps
   // 최초 로드 시 할 일 목록 가져오기
   useEffect(() => {
     fetchTodos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 할 일 추가

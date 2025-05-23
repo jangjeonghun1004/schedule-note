@@ -4,12 +4,14 @@ import { prisma } from "@/lib/prisma";
 // 메모 단일 조회
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const memo = await prisma.memo.findUnique({
       where: {
-        id: params.id
+        id
       }
     });
 
@@ -33,9 +35,10 @@ export async function GET(
 // 메모 수정
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { content } = await request.json();
 
     if (!content || content.trim() === "") {
@@ -47,7 +50,7 @@ export async function PUT(
 
     const updatedMemo = await prisma.memo.update({
       where: {
-        id: params.id
+        id
       },
       data: {
         content
@@ -67,12 +70,14 @@ export async function PUT(
 // 메모 삭제
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     await prisma.memo.delete({
       where: {
-        id: params.id
+        id
       }
     });
 

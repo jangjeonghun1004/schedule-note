@@ -31,6 +31,12 @@ const backgroundImages: BackgroundImage[] = [
     src: '/skin/Designer-4.png',
     alt: '디자이너 배경 3'
   }
+  ,
+  {
+    id: 'designer-4',
+    src: '/skin/Designer-5.png',
+    alt: '디자이너 배경 4'
+  }
 ];
 
 export default function BackgroundSelectorWidget() {

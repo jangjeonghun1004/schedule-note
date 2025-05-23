@@ -6,6 +6,7 @@ import { PrismaClient } from '@prisma/client';
 
 // 타입 확장을 통해 Todo, Memo 모델에 대한 접근 허용
 declare global {
+  // eslint-disable-next-line no-var
   var prisma: PrismaClient | undefined;
 }
 

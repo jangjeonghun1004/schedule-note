@@ -18,7 +18,6 @@ export async function GET(request: NextRequest) {
         createdAt: 'desc'
       }
     });
-    console.log(todos);
     return NextResponse.json(todos);
   } catch (error) {
     console.error("Todo 목록 조회 중 오류 발생:", error);

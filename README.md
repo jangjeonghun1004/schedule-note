@@ -1,5 +1,14 @@
 
 
+
+
+Next.js 15.3.2 버전에서 API 라우트 핸들러의 params 타입 문제:
+기존: { params: { id: string } }
+수정: { params: Promise<{ id: string }> }
+이에 따라 params 사용 시 await params 구문 추가
+
+
+
 API 라우터에서 이 Date 객체가 JSON으로 직렬화될 때 자동으로 UTC로 변환됩니다
 
 로컬 스토리지와 API 통합으로 오프라인 지원

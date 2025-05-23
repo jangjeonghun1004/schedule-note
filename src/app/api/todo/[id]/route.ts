@@ -4,12 +4,14 @@ import { prisma } from "@/lib/prisma";
 // Todo 단일 조회
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const todo = await prisma.todo.findUnique({
       where: {
-        id: params.id
+        id
       }
     });
 
@@ -33,9 +35,10 @@ export async function GET(
 // Todo 수정
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { text, completed, deadline } = await request.json();
     
     // 날짜 처리
@@ -49,7 +52,11 @@ export async function PUT(
     }
     
     // 업데이트할 데이터 생성
-    const updateData: any = {};
+    const updateData: {
+      text?: string;
+      completed?: boolean;
+      deadline?: Date | null;
+    } = {};
     
     if (text !== undefined) updateData.text = text;
     if (completed !== undefined) updateData.completed = completed;
@@ -57,7 +64,7 @@ export async function PUT(
     
     const updatedTodo = await prisma.todo.update({
       where: {
-        id: params.id
+        id
       },
       data: updateData
     });
@@ -75,12 +82,14 @@ export async function PUT(
 // Todo 삭제
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     await prisma.todo.delete({
       where: {
-        id: params.id
+        id
       }
     });
 
@@ -100,13 +109,15 @@ export async function DELETE(
 // Todo 완료 상태 토글 (PATCH)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     // 현재 Todo 가져오기
     const currentTodo = await prisma.todo.findUnique({
       where: {
-        id: params.id
+        id
       }
     });
 
@@ -120,7 +131,7 @@ export async function PATCH(
     // 완료 상태 토글
     const updatedTodo = await prisma.todo.update({
       where: {
-        id: params.id
+        id
       },
       data: {
         completed: !currentTodo.completed
